@@ -13,6 +13,7 @@ from urllib.parse import urlparse, parse_qs
 from youtube_transcript_api import YouTubeTranscriptApi
 from googleapiclient.discovery import build
 from flask import Flask, request, jsonify
+from decouple import config
 
 script_directory = os.path.dirname(__file__)
 column_transformer = os.path.join(script_directory, 'models', 'column_transformer.sav')
@@ -26,7 +27,7 @@ with open('config.json') as config_file:
 
 def get_embeddings(text: str):
     url = "https://api.openai.com/v1/embeddings"
-    api_key = config["embedding_key"]
+    api_key = os.environ.get("embedding_key")
 
     # Define the request headers
     headers = {
@@ -51,7 +52,7 @@ def get_embeddings(text: str):
     return embedding
 
 def single_vector_search(query: str):
-    search_client = SearchClient(config["cognitive_search_service_endpoint"], config["cognitive_search_index_name"], AzureKeyCredential(config["search_client_key"]))
+    search_client = SearchClient(os.environ.get("cognitive_search_service_endpoint"), os.environ.get("cognitive_search_index_name"), AzureKeyCredential(os.environ.get("search_client_key")))
     vector = Vector(value=get_embeddings(query), k=100, fields="embedding")
 
     results = search_client.search(
@@ -94,7 +95,7 @@ def parse_youtube_duration(duration_str):
 
 def get_video_data(video_id): 
     print(f'Getting data for video {video_id}')
-    youtube = build('youtube', 'v3', developerKey=config["youtube_api_key"])
+    youtube = build('youtube', 'v3', developerKey=os.environ.get("youtube_api_key"))
     video_response = youtube.videos().list(
         id=video_id,
         part='snippet,contentDetails'
@@ -109,7 +110,7 @@ def get_video_data(video_id):
 def get_thumbnail_data(video):
     print(f'Getting thumbnail data for video {video["video_id"]}')
     headers = {
-        "Ocp-Apim-Subscription-Key": config["image_analysis_api_key"],
+        "Ocp-Apim-Subscription-Key": os.environ.get("image_analysis_api_key"),
         "Content-Type": "application/json"
     }
     params = {
@@ -121,7 +122,7 @@ def get_thumbnail_data(video):
     data = {
       "url": video['video_thumbnail']
     }
-    response = requests.post(config["image_analysis_endpoint"], headers=headers, params=params, json=data)
+    response = requests.post(os.environ.get("image_analysis_endpoint"), headers=headers, params=params, json=data)
 
     video["thumbnail_description"] = response.json()["captionResult"]["text"]
     video["thumbnail_text"] = response.json()["readResult"]["content"]
@@ -187,7 +188,7 @@ def get_suggestions_and_violations(user_video, related_videos):
   for video in related_videos:
     system_prompt += "{" + generate_concatenated_details(video) + "}"
   
-  openai.api_key = config["gpt_api_key"]
+  openai.api_key = os.environ.get("gpt_api_key")
   openai.api_type = "azure"
   openai.api_base = "https://ausopenai.azure-api.net"
   openai.api_version = "2023-05-15"
