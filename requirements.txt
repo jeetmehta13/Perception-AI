@@ -7,4 +7,3 @@ flask==2.3.3
 azure-search-documents==11.4.0
 azure-search==1.0.0
 youtube-transcript-api==0.6.1
-```
