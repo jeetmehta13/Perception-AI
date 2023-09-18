@@ -4,6 +4,6 @@ openai==0.28.0
 pandas==2.1.0
 python-dotenv==1.0.0
 flask==2.3.3
-azure-search-documents==11.4.0
-azure-search==1.0.0
+azure-search-documents==11.4.0b9
+azure-search==1.0.0b2
 youtube-transcript-api==0.6.1
