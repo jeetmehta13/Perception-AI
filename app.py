@@ -240,6 +240,12 @@ def process_data():
                 related_videos = single_vector_search(concatenated_video)
                 suggestions = get_suggestions_and_violations(concatenated_video, related_videos.get("highest_rated_results"))
                 normalised_rating = normalise_rating(video_rating, related_videos.get("closest_results"))
+                
+                suggestions += "\n\n" + "Suggested videos to use: \n"
+
+                for video in related_videos.get("highest_rated_results"):
+                  suggestions += "https://www.youtube.com/watch?v=" + video["video_id"] + "\n"
+
                 output_data = {
                     'success': 'true',
                     'suggestions': suggestions,
@@ -265,5 +271,5 @@ def process_data():
         # Return the processed output as JSON
         return jsonify(output_data)    
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=8000)
