@@ -258,20 +258,20 @@ def process_data():
                   suggestions += f"https://www.youtube.com/watch?v={video_id}\n"
 
                 output_data = {
-                    'success': 'true',
+                    'success': True,
                     'suggestions': suggestions,
                     'rating': normalised_rating
                 }
             else:
                 print(f'Could not find video with id {video_id}')
                 output_data = {
-                    'success': 'false',
+                    'success': False,
                     'error': f'Could not find video with id {video_id}'
                 }
         else:
             print('Could not parse video id from provided input')
             output_data = {
-                'success': 'false',
+                'success': False,
                 'error': 'Could not parse video id from provided input'
             }
 
@@ -281,8 +281,8 @@ def process_data():
       except Exception as e:
         print(e)
         return jsonify({
-            'success': 'false',
-            'error': 'An error occurred while processing the video, please try again after some time, or try a different video.'
+            'success': False,
+            'error': 'An error occurred while processing the video or rate limit has been reached, please try again in 2 minutes, or try a different video.'
         })
 
 if __name__ == "__main__":
