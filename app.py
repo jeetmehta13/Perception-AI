@@ -47,31 +47,36 @@ def get_embeddings(text: str):
         embedding = embedding_data["data"][0]["embedding"]
     else:
         print("Error:", response.status_code, response.text)
+        raise Exception("Request failed with status code: %d" % (response.status_code))
     
     return embedding
 
 def single_vector_search(query: str):
-    search_client = SearchClient(config["cognitive_search_service_endpoint"], config["cognitive_search_index_name"], AzureKeyCredential(config["search_client_key"]))
-    vector = Vector(value=get_embeddings(query), k=100, fields="embedding")
+    try:
+        search_client = SearchClient(config["cognitive_search_service_endpoint"], config["cognitive_search_index_name"], AzureKeyCredential(config["search_client_key"]))
+        vector = Vector(value=get_embeddings(query), k=100, fields="embedding")
 
-    results = search_client.search(
-        search_text="",
-        vectors=[vector],
-        select=["video_title", "video_id", "thumbnail_description", "thumbnail_text", "video_transcript", "video_rating"],
-    )
+        results = search_client.search(
+            search_text="",
+            vectors=[vector],
+            select=["video_title", "video_id", "thumbnail_description", "thumbnail_text", "video_transcript", "video_rating"],
+        )
 
-    results = list(results)
-    results_dict = {}
+        results = list(results)
+        results_dict = {}
 
-    sorted_results = sorted(results, key=lambda x: x["video_rating"], reverse=True)
-    top_10_highest_rated = sorted_results[:10]
-    
-    results_dict = {
-      "closest_results": results,
-      "highest_rated_results": top_10_highest_rated
-    }
+        sorted_results = sorted(results, key=lambda x: x["video_rating"], reverse=True)
+        top_10_highest_rated = sorted_results[:10]
+        
+        results_dict = {
+          "closest_results": results,
+          "highest_rated_results": top_10_highest_rated
+        }
 
-    return results_dict
+        return results_dict
+    except Exception as e:
+        print(e)
+        raise Exception("An error occurred while searching for similar videos")
 
 def generate_concatenated_details(obj):
   return (
@@ -207,11 +212,11 @@ def get_suggestions_and_violations(user_video, related_videos):
 
 @app.route('/')
 def hello_world():
-    return 'Hello, World!'
+    return 'Hello, Welcome to Perception AI! To get the rating of a video, please use the /video endpoint, here is an example: /video?video=https://www.youtube.com/watch?v=9bZkp7q19f0'
 
 @app.route('/video', methods=['GET'])
 def process_data():
-    
+      try:
         # Get input data from the query parameter 'data'
         input_video = request.args.get('video')
         print(f'Processing video {input_video}')
@@ -242,9 +247,15 @@ def process_data():
                 normalised_rating = normalise_rating(video_rating, related_videos.get("closest_results"))
                 
                 suggestions += "\n\n" + "Suggested videos to use: \n"
+                unique_video_ids = []
 
                 for video in related_videos.get("highest_rated_results"):
-                  suggestions += "https://www.youtube.com/watch?v=" + video["video_id"] + "\n"
+                  unique_video_ids.append(video["video_id"])
+
+                unique_video_ids = list(set(unique_video_ids))
+
+                for video_id in unique_video_ids:
+                  suggestions += f"https://www.youtube.com/watch?v={video_id}\n"
 
                 output_data = {
                     'success': 'true',
@@ -255,21 +266,24 @@ def process_data():
                 print(f'Could not find video with id {video_id}')
                 output_data = {
                     'success': 'false',
-                    'suggestions': '',
-                    'rating': 0,
                     'error': f'Could not find video with id {video_id}'
                 }
         else:
             print('Could not parse video id from provided input')
             output_data = {
                 'success': 'false',
-                'suggestions': '',
-                'rating': 0,
                 'error': 'Could not parse video id from provided input'
             }
 
         # Return the processed output as JSON
         return jsonify(output_data)    
+
+      except Exception as e:
+        print(e)
+        return jsonify({
+            'success': 'false',
+            'error': 'An error occurred while processing the video, please try again after some time, or try a different video.'
+        })
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000)
