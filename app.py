@@ -180,7 +180,10 @@ def normalise_rating(generated_rating, related_videos):
     z_score = (generated_rating - mean_ratio) / std_deviation
     rating = (z_score * 5) + 5
     rating = max(0, min(10, rating))
-    rating = round(float(rating.item()), 2)
+    print(type(rating))
+    if type(rating) is int:
+      rating = round(float(rating), 2)
+    else: rating = round(float(rating.item()), 2)
     return rating
 
 def get_suggestions_and_violations(user_video, related_videos):
@@ -282,7 +285,7 @@ def process_data():
         print(e)
         return jsonify({
             'success': False,
-            'error': 'An error occurred while processing the video or rate limit has been reached, please try again in 2 minutes, or try a different video.'
+            'error': 'An error occurred while processing the video or rate limit has been reached, please try again in 2 minutes, or try a different video. Remember to make sure that the video is around 15-20 mins long and is a video essay.'
         })
 
 if __name__ == "__main__":
