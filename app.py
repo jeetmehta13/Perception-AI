@@ -225,7 +225,7 @@ def embed_youtube_url(video_url):
 
 @app.route('/')
 def hello_world():
-    return 'Hello, Welcome to Perception AI! To get the rating of a video, please use the /video endpoint, here is an example: /video?video=https://www.youtube.com/watch?v=9bZkp7q19f0'
+    return render_template('./home.html')
 
 @app.route('/video', methods=['GET'])
 def process_data():

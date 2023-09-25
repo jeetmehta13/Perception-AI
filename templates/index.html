@@ -31,7 +31,7 @@
     }
 
     .related-videos iframe {
-      width: 100%;
+      width: 200%;
       height: 200px;
       /* Adjust the height as needed */
     }
@@ -82,7 +82,7 @@
       <div id="rating" class="rating">Rating: {{ json_data.rating }}</div>
       <div id="disclaimer" class="disclaimer">{{ json_data.disclaimer }}</div>
       <div id="suggestions" class="suggestions">
-        <h3>Suggestions:</h3>
+        <h3>Suggestions and Violations:</h3>
         <!-- Use the nl2br filter to render newline characters as line breaks -->
         <p>{{ json_data.suggestions | replace('\n', '<br>') | safe }}</p>
       </div>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Perception AI</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background-color: #f2f2f2;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 100px auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      color: #007bff;
+    }
+
+    p {
+      font-size: 16px;
+    }
+
+    input[type="text"] {
+      width: 80%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-right: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Hello, Welcome to Perception AI!</h1>
+    <p>To get the rating of a video, please enter the video URL here. Here is an example:</p>
+    <p>https://www.youtube.com/watch?v=8eq2vGEEbB4</p>
+
+    <form action="/video" method="get">
+      <input type="text" name="video" placeholder="Enter Video URL">
+      <button type="submit">Get Results</button>
+    </form>
+  </div>
+</body>
+
+</html>
