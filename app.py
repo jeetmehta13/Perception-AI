@@ -300,16 +300,19 @@ def process_data():
 @app.route('/demo', methods=['GET'])
 def process_data_demo():
     json_data = {
-        "disclaimer": "Please note that...",
+        "disclaimer": "Please note that the rating is based on the video essay's similarity to other video essays. The rating is not a reflection of the quality of the video essay. This is a ML model and is not perfect, please use your own judgement when using this rating. We recommend creator's should have belief in their own work and their creative vision.",
         "rating": 4.46,
         "related_videos": [
             "https://www.youtube.com/watch?v=Ctd3iL9I0zw",
-            "https://www.youtube.com/watch?v=XrhNYHaQF9o"
-            # Add more related videos as needed
+            "https://www.youtube.com/watch?v=XrhNYHaQF9o",
+            "https://www.youtube.com/watch?v=RS7QAQGjiDE",
+            "https://www.youtube.com/watch?v=Z7VWXkHFgYM",
+            "https://www.youtube.com/watch?v=z25wILjdIgA",
+            "https://www.youtube.com/watch?v=YIHoliBx-0Q"
         ],
         "success": True,
-        "suggestions": "Suggestions:\n1. Improve the storytelling...\n2. Demo demo demo demo\n3. Demo fdsjikghsihgiofgdiosz",
-        "input_video": "https://www.youtube.com/watch?v=9bZkp7q19f0"
+        "suggestions": "Suggestions:\n1. Improve the storytelling and flow of the video by providing a clear introduction, body, and conclusion. The current video transcript is disjointed and confusing, making it difficult for viewers to follow the story.\n2. Provide accurate information and fact-check the content before presenting it. The current video contains several factual errors and inconsistencies that undermine its credibility.\n3. Enhance the quality of the visuals and graphics in the video to make it more engaging and visually appealing for viewers.\n4. Use a more captivating and relevant thumbnail image that accurately represents the content of the video.\n5. Consider adding background music or sound effects to enhance the overall viewing experience.\n\nViolations:\nNone found.",
+        "input_video": "https://www.youtube.com/watch?v=8eq2vGEEbB4"
     }
 
     return render_template('./index.html', json_data=json_data, embed_youtube_url=embed_youtube_url)
