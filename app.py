@@ -12,7 +12,7 @@ from azure.search.documents.models import Vector
 from urllib.parse import urlparse, parse_qs
 from youtube_transcript_api import YouTubeTranscriptApi
 from googleapiclient.discovery import build
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 
 script_directory = os.path.dirname(__file__)
 column_transformer = os.path.join(script_directory, 'models', 'column_transformer.sav')
@@ -196,12 +196,12 @@ def get_suggestions_and_violations(user_video, related_videos):
     system_prompt += "{" + generate_concatenated_details(video) + "}"
   
   openai.api_key = config["gpt_api_key"]
-  openai.api_type = "azure"
-  openai.api_base = "https://ausopenai.azure-api.net"
-  openai.api_version = "2023-05-15"
+  # openai.api_type = "azure"
+  # openai.api_base = "https://ausopenai.azure-api.net"
+  # openai.api_version = "2023-05-15"
 
   response = openai.ChatCompletion.create(
-      engine="gpt-35-turbo-16k",
+      model="gpt-3.5-turbo-16k",
       messages=[
           {
             "role": "system", 
@@ -212,6 +212,16 @@ def get_suggestions_and_violations(user_video, related_videos):
   )
 
   return response['choices'][0]['message']['content']   
+
+def embed_youtube_url(video_url):
+    if "youtu.be" in video_url:
+        # Handle short YouTube URLs (e.g., https://youtu.be/VIDEO_ID)
+        video_id = video_url.split("/")[-1]
+    else:
+        # Handle full YouTube URLs (e.g., https://www.youtube.com/watch?v=VIDEO_ID)
+        video_id = video_url.split("?v=")[1]
+
+    return f"https://www.youtube.com/embed/{video_id}"
 
 @app.route('/')
 def hello_world():
@@ -249,21 +259,20 @@ def process_data():
                 suggestions = get_suggestions_and_violations(concatenated_video, related_videos.get("highest_rated_results"))
                 normalised_rating = normalise_rating(video_rating, related_videos.get("closest_results"))
                 
-                suggestions += "\n\n" + "Suggested videos to use: \n"
                 unique_video_ids = []
 
                 for video in related_videos.get("highest_rated_results"):
-                  unique_video_ids.append(video["video_id"])
+                  unique_video_ids.append(f'https://www.youtube.com/watch?v={video["video_id"]}')
 
                 unique_video_ids = list(set(unique_video_ids))
-
-                for video_id in unique_video_ids:
-                  suggestions += f"https://www.youtube.com/watch?v={video_id}\n"
 
                 output_data = {
                     'success': True,
                     'suggestions': suggestions,
-                    'rating': normalised_rating
+                    'rating': normalised_rating,
+                    'related_videos': unique_video_ids,
+                    'disclaimer': 'Please note that the rating is based on the video essay\'s similarity to other video essays. The rating is not a reflection of the quality of the video essay. This is a ML model and is not perfect, please use your own judgement when using this rating. We recommend creator\'s should have belief in their own work and their creative vision.',
+                    'input_video': input_video
                 }
             else:
                 print(f'Could not find video with id {video_id}')
@@ -279,7 +288,7 @@ def process_data():
             }
 
         # Return the processed output as JSON
-        return jsonify(output_data)    
+        return render_template('./index.html', json_data=output_data, embed_youtube_url=embed_youtube_url)
 
       except Exception as e:
         print(e)
@@ -287,6 +296,23 @@ def process_data():
             'success': False,
             'error': 'An error occurred while processing the video or rate limit has been reached, please try again in 2 minutes, or try a different video. Remember to make sure that the video is around 15-20 mins long and is a video essay.'
         })
+      
+@app.route('/demo', methods=['GET'])
+def process_data_demo():
+    json_data = {
+        "disclaimer": "Please note that...",
+        "rating": 4.46,
+        "related_videos": [
+            "https://www.youtube.com/watch?v=Ctd3iL9I0zw",
+            "https://www.youtube.com/watch?v=XrhNYHaQF9o"
+            # Add more related videos as needed
+        ],
+        "success": True,
+        "suggestions": "Suggestions:\n1. Improve the storytelling...\n2. Demo demo demo demo\n3. Demo fdsjikghsihgiofgdiosz",
+        "input_video": "https://www.youtube.com/watch?v=9bZkp7q19f0"
+    }
+
+    return render_template('./index.html', json_data=json_data, embed_youtube_url=embed_youtube_url)
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000)
