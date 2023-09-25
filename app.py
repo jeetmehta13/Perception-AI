@@ -212,12 +212,12 @@ def get_suggestions_and_violations(user_video, related_videos):
     system_prompt += "{" + generate_concatenated_details(video) + "}"
   
   openai.api_key = config["gpt_api_key"]
-  # openai.api_type = "azure"
-  # openai.api_base = "https://ausopenai.azure-api.net"
-  # openai.api_version = "2023-05-15"
+  openai.api_type = "azure"
+  openai.api_base = config["gpt_api_base"]
+  openai.api_version = "2023-05-15"
 
   response = openai.ChatCompletion.create(
-      model="gpt-3.5-turbo-16k",
+      engine="Perception-AI-deployment",
       messages=[
           {
             "role": "system", 
