@@ -54,7 +54,7 @@ def get_embeddings(text: str):
 def single_vector_search(query: str):
     try:
         search_client = SearchClient(config["cognitive_search_service_endpoint"], config["cognitive_search_index_name"], AzureKeyCredential(config["search_client_key"]))
-        vector = Vector(value=get_embeddings(query), k=100, fields="embedding")
+        vector = Vector(value=get_embeddings(query), k=30, fields="embedding")
 
         results = search_client.search(
             search_text="",
