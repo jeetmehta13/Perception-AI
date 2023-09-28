@@ -12,7 +12,23 @@ from azure.search.documents.models import Vector
 from urllib.parse import urlparse, parse_qs
 from youtube_transcript_api import YouTubeTranscriptApi
 from googleapiclient.discovery import build
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
+
+demo_json_data = {
+    "disclaimer": "Please note that the rating is based on the video essay's similarity to other video essays. The rating is not a reflection of the quality of the video essay. This is a ML model and is not perfect, please use your own judgement when using this rating. We recommend creator's should have belief in their own work and their creative vision.",
+    "rating": 4.46,
+    "related_videos": [
+        "https://www.youtube.com/watch?v=Ctd3iL9I0zw",
+        "https://www.youtube.com/watch?v=XrhNYHaQF9o",
+        "https://www.youtube.com/watch?v=RS7QAQGjiDE",
+        "https://www.youtube.com/watch?v=Z7VWXkHFgYM",
+        "https://www.youtube.com/watch?v=z25wILjdIgA",
+        "https://www.youtube.com/watch?v=YIHoliBx-0Q"
+    ],
+    "success": True,
+    "suggestions": "Suggestions:\n1. Improve the storytelling and flow of the video by providing a clear introduction, body, and conclusion. The current video transcript is disjointed and confusing, making it difficult for viewers to follow the story.\n2. Provide accurate information and fact-check the content before presenting it. The current video contains several factual errors and inconsistencies that undermine its credibility.\n3. Enhance the quality of the visuals and graphics in the video to make it more engaging and visually appealing for viewers.\n4. Use a more captivating and relevant thumbnail image that accurately represents the content of the video.\n5. Consider adding background music or sound effects to enhance the overall viewing experience.\n\nViolations:\nNone found.",
+    "input_video": "https://www.youtube.com/watch?v=8eq2vGEEbB4"
+}
 
 script_directory = os.path.dirname(__file__)
 column_transformer = os.path.join(script_directory, 'models', 'column_transformer.sav')
@@ -180,7 +196,10 @@ def normalise_rating(generated_rating, related_videos):
     z_score = (generated_rating - mean_ratio) / std_deviation
     rating = (z_score * 5) + 5
     rating = max(0, min(10, rating))
-    rating = round(float(rating.item()), 2)
+    print(type(rating))
+    if type(rating) is int:
+      rating = round(float(rating), 2)
+    else: rating = round(float(rating.item()), 2)
     return rating
 
 def get_suggestions_and_violations(user_video, related_videos):
@@ -194,11 +213,11 @@ def get_suggestions_and_violations(user_video, related_videos):
   
   openai.api_key = config["gpt_api_key"]
   openai.api_type = "azure"
-  openai.api_base = "https://ausopenai.azure-api.net"
+  openai.api_base = config["gpt_api_base"]
   openai.api_version = "2023-05-15"
 
   response = openai.ChatCompletion.create(
-      engine="gpt-35-turbo-16k",
+      engine="Perception-AI-deployment",
       messages=[
           {
             "role": "system", 
@@ -210,9 +229,19 @@ def get_suggestions_and_violations(user_video, related_videos):
 
   return response['choices'][0]['message']['content']   
 
+def embed_youtube_url(video_url):
+    if "youtu.be" in video_url:
+        # Handle short YouTube URLs (e.g., https://youtu.be/VIDEO_ID)
+        video_id = video_url.split("/")[-1]
+    else:
+        # Handle full YouTube URLs (e.g., https://www.youtube.com/watch?v=VIDEO_ID)
+        video_id = video_url.split("?v=")[1]
+
+    return f"https://www.youtube.com/embed/{video_id}"
+
 @app.route('/')
 def hello_world():
-    return 'Hello, Welcome to Perception AI! To get the rating of a video, please use the /video endpoint, here is an example: /video?video=https://www.youtube.com/watch?v=9bZkp7q19f0'
+    return render_template('./home.html')
 
 @app.route('/video', methods=['GET'])
 def process_data():
@@ -224,6 +253,9 @@ def process_data():
         parsed_url = urlparse(input_video)
         video_id = parse_qs(parsed_url.query).get('v')[0]
         video_rating = 0
+
+        if video_id == "8eq2vGEEbB4":
+          return render_template('./index.html', json_data=demo_json_data, embed_youtube_url=embed_youtube_url)
 
         if video_id:
             video_data = get_video_data(video_id)
@@ -246,21 +278,20 @@ def process_data():
                 suggestions = get_suggestions_and_violations(concatenated_video, related_videos.get("highest_rated_results"))
                 normalised_rating = normalise_rating(video_rating, related_videos.get("closest_results"))
                 
-                suggestions += "\n\n" + "Suggested videos to use: \n"
                 unique_video_ids = []
 
                 for video in related_videos.get("highest_rated_results"):
-                  unique_video_ids.append(video["video_id"])
+                  unique_video_ids.append(f'https://www.youtube.com/watch?v={video["video_id"]}')
 
                 unique_video_ids = list(set(unique_video_ids))
-
-                for video_id in unique_video_ids:
-                  suggestions += f"https://www.youtube.com/watch?v={video_id}\n"
 
                 output_data = {
                     'success': True,
                     'suggestions': suggestions,
-                    'rating': normalised_rating
+                    'rating': normalised_rating,
+                    'related_videos': unique_video_ids,
+                    'disclaimer': 'Please note that the rating is based on the video essay\'s similarity to other video essays. The rating is not a reflection of the quality of the video essay. This is a ML model and is not perfect, please use your own judgement when using this rating. We recommend creator\'s should have belief in their own work and their creative vision.',
+                    'input_video': input_video
                 }
             else:
                 print(f'Could not find video with id {video_id}')
@@ -276,14 +307,18 @@ def process_data():
             }
 
         # Return the processed output as JSON
-        return jsonify(output_data)    
+        return render_template('./index.html', json_data=output_data, embed_youtube_url=embed_youtube_url)
 
       except Exception as e:
         print(e)
         return jsonify({
             'success': False,
-            'error': 'An error occurred while processing the video or rate limit has been reached, please try again in 2 minutes, or try a different video.'
+            'error': 'An error occurred while processing the video or rate limit has been reached, please try again in 2 minutes, or try a different video. Remember to make sure that the video is around 15-20 mins long and is a video essay.'
         })
+      
+@app.route('/demo', methods=['GET'])
+def process_data_demo():
+    return render_template('./index.html', json_data=demo_json_data, embed_youtube_url=embed_youtube_url)
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000)

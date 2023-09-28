@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Video Essay Details</title>
+  <!-- Your CSS and styling here -->
+  <style>
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .left-column,
+    .right-column {
+      flex: 1;
+    }
+
+    .related-videos ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .related-videos li {
+      display: inline-block;
+      width: 48%;
+      /* Two videos in one row with a small gap */
+      margin-right: 2%;
+    }
+
+    .related-videos iframe {
+      width: 200%;
+      height: 200px;
+      /* Adjust the height as needed */
+    }
+
+    body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .rating {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .disclaimer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #777;
+        }
+
+        .suggestions {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        .related-videos {
+            margin-top: 20px;
+        }
+
+        .related-video-link {
+            display: block;
+            margin-bottom: 10px;
+            text-decoration: none;
+            color: #007bff;
+        }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="left-column">
+      <div id="rating" class="rating">Rating: {{ json_data.rating }}</div>
+      <div id="disclaimer" class="disclaimer">{{ json_data.disclaimer }}</div>
+      <div id="suggestions" class="suggestions">
+        <h3>Suggestions and Violations:</h3>
+        <!-- Use the nl2br filter to render newline characters as line breaks -->
+        <p>{{ json_data.suggestions | replace('\n', '<br>') | safe }}</p>
+      </div>
+      <div id="related-videos" class="related-videos">
+        <h3>Related Videos:</h3>
+        <ul>
+          {% for video in json_data.related_videos %}
+          <li>
+            <iframe src="{{ embed_youtube_url(video) }}" frameborder="0" allowfullscreen></iframe>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    <div class="right-column">
+      <div id="input-video" class="input-video">
+        <h3>User's Input Video:</h3>
+        <iframe src="{{ embed_youtube_url(json_data.input_video) }}" frameborder="0" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

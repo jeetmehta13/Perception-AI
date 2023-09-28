@@ -15,6 +15,4 @@ Provide a list of suggestions to improve the video. Each suggestion is a new ite
 Violations
 Provide a list of violations. Each violation is a new item in the list. If you find no violations, skip this section entirely
 
-Disclaimer - Provide a disclaimer stating that the suggestions and violations are based on the data provided and may not be accurate. Creator should use their own discretion and artistic judgement to make changes to their video. This is merely an AI model and it does not know what is good and what is not.
-
 Each video data element is enclosed in curly braces. The data is:
