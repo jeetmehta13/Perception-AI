@@ -40,30 +40,18 @@ app = Flask(__name__)
 with open('config.json') as config_file:
   config = json.load(config_file)
 
+openai.api_key = config["gpt_api_key"]
+openai.api_type = "azure"
+openai.api_base = config["gpt_api_base"]
+openai.api_version = "2023-05-15"
+
 def get_embeddings(text: str):
-    url = "https://api.openai.com/v1/embeddings"
-    api_key = config["embedding_key"]
+    response = openai.Embedding.create(
+        input=text,
+        engine="Perception-AI-embeddings"
+    )
 
-    # Define the request headers
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
-    }
-
-    # Define the request payload as a dictionary
-    payload = {
-        "input": text,
-        "model": "text-embedding-ada-002"
-    }
-    response = requests.post(url, json=payload, headers=headers)
-
-    # Check if the request was successful
-    if response.status_code == 200:
-        embedding_data = response.json()
-        embedding = embedding_data["data"][0]["embedding"]
-    else:
-        print("Error:", response.status_code, response.text)
-        raise Exception("Request failed with status code: %d" % (response.status_code))
+    embedding = response["data"][0]["embedding"]
     
     return embedding
 
@@ -196,10 +184,11 @@ def normalise_rating(generated_rating, related_videos):
     z_score = (generated_rating - mean_ratio) / std_deviation
     rating = (z_score * 5) + 5
     rating = max(0, min(10, rating))
-    print(type(rating))
+    
     if type(rating) is int:
       rating = round(float(rating), 2)
     else: rating = round(float(rating.item()), 2)
+    
     return rating
 
 def get_suggestions_and_violations(user_video, related_videos):
@@ -210,11 +199,6 @@ def get_suggestions_and_violations(user_video, related_videos):
   user_prompt += "{" + user_video + "}"
   for video in related_videos:
     system_prompt += "{" + generate_concatenated_details(video) + "}"
-  
-  openai.api_key = config["gpt_api_key"]
-  openai.api_type = "azure"
-  openai.api_base = config["gpt_api_base"]
-  openai.api_version = "2023-05-15"
 
   response = openai.ChatCompletion.create(
       engine="Perception-AI-deployment",
@@ -251,7 +235,15 @@ def process_data():
         print(f'Processing video {input_video}')
         # Call a function in another_file.py to process the input data
         parsed_url = urlparse(input_video)
-        video_id = parse_qs(parsed_url.query).get('v')[0]
+        video_id = parse_qs(parsed_url.query).get('v')
+        
+        if not video_id:
+          route = urlparse(input_video).path
+          path_sections = route.split('/')
+          video_id = path_sections[1]
+        else:
+          video_id = video_id[0]
+        
         video_rating = 0
 
         if video_id == "8eq2vGEEbB4":
